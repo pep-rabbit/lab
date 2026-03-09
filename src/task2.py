@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import platform
 from dataclasses import dataclass
@@ -10,6 +11,7 @@ class SystemInfoArgs:
     version: bool
     processor: bool
     kernels: bool
+    json: bool
     file: str
 
 
@@ -36,6 +38,11 @@ def parse_args() -> SystemInfoArgs:
         action="store_true",
     )
     parser.add_argument(
+        "-j",
+        "--json",
+        action="store_true",
+    )
+    parser.add_argument(
         "-f",
         "--file",
         default="stdout",
@@ -46,6 +53,7 @@ def parse_args() -> SystemInfoArgs:
         version=namespace.version,
         processor=namespace.processor,
         kernels=namespace.kernels,
+        json=namespace.json,
         file=namespace.file,
     )
 
@@ -78,9 +86,12 @@ def filter_info(info: dict[str, str], args: SystemInfoArgs) -> dict[str, str]:
     return filtered
 
 
-def output_info(info: dict[str, str], output: str) -> None:
-    lines = [f"{key}: {value}" for key, value in info.items()]
-    text = "\n".join(lines)
+def output_info(info: dict[str, str], output: str, as_json: bool = False) -> None:
+    if as_json:
+        text = json.dumps(info, indent=2)
+    else:
+        lines = [f"{key}: {value}" for key, value in info.items()]
+        text = "\n".join(lines)
 
     if output == "stdout":
         print(text)
@@ -93,7 +104,7 @@ def main() -> None:
     args = parse_args()
     system_info = get_system_info()
     filtered_info = filter_info(system_info, args)
-    output_info(filtered_info, args.file)
+    output_info(filtered_info, args.file, args.json)
 
 
 if __name__ == "__main__":
